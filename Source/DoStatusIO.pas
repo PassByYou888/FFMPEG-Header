@@ -31,8 +31,9 @@ type
   TDoStatusCall = procedure(AText: SystemString; const ID: Integer);
 
 procedure DoStatus(Text: SystemString; const ID: Integer); overload;
-procedure AddDoStatusHook(TokenObj: TCoreClassObject; CallProc: TDoStatusMethod); overload;
-procedure AddDoStatusHook(TokenObj: TCoreClassObject; CallProc: TDoStatusCall); overload;
+procedure AddDoStatusHook(TokenObj: TCoreClassObject; CallProc: TDoStatusMethod);
+procedure AddDoStatusHookM(TokenObj: TCoreClassObject; CallProc: TDoStatusMethod);
+procedure AddDoStatusHookC(TokenObj: TCoreClassObject; CallProc: TDoStatusCall);
 procedure DeleteDoStatusHook(TokenObj: TCoreClassObject);
 procedure DisableStatus;
 procedure EnabledStatus;
@@ -338,9 +339,9 @@ begin
   th := TCoreClassThread.CurrentThread;
   if (th = nil) or (th.ThreadID <> MainThreadID) then
     begin
-      StatusCritical.Acquire;
       new(ps);
       ps^ := Text;
+      StatusCritical.Acquire;
       ReservedStatus.Add(ps);
       StatusCritical.Release;
       exit;
@@ -356,6 +357,11 @@ begin
 end;
 
 procedure AddDoStatusHook(TokenObj: TCoreClassObject; CallProc: TDoStatusMethod);
+begin
+  AddDoStatusHookM(TokenObj, CallProc);
+end;
+
+procedure AddDoStatusHookM(TokenObj: TCoreClassObject; CallProc: TDoStatusMethod);
 var
   p: PDoStatusData;
 begin
@@ -366,7 +372,7 @@ begin
   HookDoStatus.Add(p);
 end;
 
-procedure AddDoStatusHook(TokenObj: TCoreClassObject; CallProc: TDoStatusCall);
+procedure AddDoStatusHookC(TokenObj: TCoreClassObject; CallProc: TDoStatusCall);
 var
   p: PDoStatusData;
 begin

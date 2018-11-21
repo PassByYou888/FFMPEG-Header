@@ -11,7 +11,7 @@
   {$MODE objfpc}
   {$MODESWITCH AdvancedRecords}
   {$NOTES OFF}
-  {$STACKFRAMES OFF}
+  {$STACKFRAMES ON}
 
   {$DEFINE LITTLE_ENDIAN}
   {$UNDEF BIG_ENDIAN}
@@ -26,12 +26,26 @@
   {$UNDEF FastMD5}
   {$DEFINE parallel}
   {$DEFINE OptimizationMemoryStreamMD5}
+
+  // used Critical Simulate Atomic with TMonitor.Enter(obj) and TMonitor.Exit(obj)
+  // CriticalSimulateAtomic defined so performance to be reduced
   {$DEFINE CriticalSimulateAtomic}
+
+  // used soft Simulate Critical(ring)
+  // SoftCritical defined so performance to be reduced
+  // {$DEFINE SoftCritical}
+
+  // {$DEFINE ANTI_DEAD_ATOMIC_LOCK}
+
+  // Using Sequential Packet Model will consume more memory and reduce IO performance,
+  // it can memory communication status and facilitate us to return to the original scene.
+  // {$DEFINE SEQUENCE_PACKET}
+
   {$DEFINE release}
   {$UNDEF debug}
   {$DEFINE INLINE_ASM}
   {$R-} { range check }
-  {$O+} { optimization }
+  {$O-} { optimization }
 {$ELSE FPC}
   {$DEFINE LITTLE_ENDIAN}
   {$UNDEF BIG_ENDIAN}
@@ -50,22 +64,24 @@
   {$DEFINE OptimizationMemoryStreamMD5}
 
   // used Critical Simulate Atomic with TMonitor.Enter(obj) and TMonitor.Exit(obj)
-  // if CriticalSimulateAtomic defined so performance to be reduced
+  // CriticalSimulateAtomic defined so performance to be reduced
   // {$DEFINE CriticalSimulateAtomic}
 
-  {$IFDEF Linux}
-    {$DEFINE CriticalSimulateAtomic}
-  {$ENDIF}
+  // used soft Simulate Critical(ring)
+  // SoftCritical defined so performance to be reduced
+  // {$DEFINE SoftCritical}
+
+  // {$DEFINE ANTI_DEAD_ATOMIC_LOCK}
+
+  // Using Sequential Packet Model will consume more memory and reduce IO performance,
+  // it can memory communication status and facilitate us to return to the original scene.
+  // {$DEFINE SEQUENCE_PACKET}
 
   {$IFDEF release}
     {$DEFINE INLINE_ASM}
     {$R-} { range check }
     {$I-} { Input output checking }
-    {$IFDEF MSWINDOWS}
-      {$O+} { optimization }
-    {$ELSE MSWINDOWS}
-      {$O-} { optimization }
-    {$ENDIF MSWINDOWS}
+    {$O+} { optimization }
   {$ELSE}
     {$UNDEF INLINE_ASM}
     {$R+} { range check }
@@ -73,14 +89,20 @@
     {$O-} { optimization }
   {$ENDIF}
 
-  // {$DEFINE NatTunnel_On_ICS}
-  {$DEFINE NatTunnel_On_CrossSocket}
-  // {$DEFINE NatTunnel_On_DIOCP}
-  // {$DEFINE NatTunnel_On_Indy}
+  {$IF Defined(Android) or Defined(IOS)}
+    {$DEFINE PhysicsIO_On_Indy}
+  {$ELSE}
+    // PhysicsIO interface
+    // {$DEFINE PhysicsIO_On_ICS}
+    {$DEFINE PhysicsIO_On_CrossSocket}
+    // {$DEFINE PhysicsIO_On_DIOCP}
+    // {$DEFINE PhysicsIO_On_Indy}
+    // {$DEFINE PhysicsIO_On_Synapse}
+  {$IFEND}
 {$ENDIF FPC}
 
-{$WARNINGS OFF}
-{$HINTS OFF}
+{$WARNINGS ON}
+{$HINTS ON}
 {$H+} { long string }
 {$A+} { Word Align Data }
 {$Q-} { Overflow checking }
@@ -101,29 +123,14 @@
   {$DEFINE CPU32}
 {$ENDIF}
 
-(*
-  {$IFDEF FPC}
-  {$ELSE FPC}
-  {$ENDIF FPC}
+{$IFDEF BIG_ENDIAN}
+  {$MESSAGE FATAL 'Big-endian system not supported'}
+{$ENDIF}
 
-  {$IFDEF FPC}
-  {$ENDIF FPC}
+{$IFOPT R+}
+  {$DEFINE RangeCheck}
+{$ENDIF}
 
-  {$IFDEF FPC}@{$ENDIF FPC}
-
-  {$IFNDEF FPC}
-  {$ENDIF FPC}
-
-  {$IFDEF parallel}
-  {$ELSE parallel}
-  {$ENDIF parallel}
-
-  {$IFNDEF parallel}
-  {$ENDIF parallel}
-
-  {$Region 'RegionName'}
-  {$EndRegion 'RegionName'}
-*)
-
-
- 
+{$IFOPT Q+}
+  {$DEFINE OverflowCheck}
+{$ENDIF}
