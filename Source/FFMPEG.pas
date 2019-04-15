@@ -1,13 +1,20 @@
 ﻿{ ****************************************************************************** }
-{ * ffmpeg supported on all in one by qq600585                                 * }
-{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * ffmpeg all in one by qq600585                                              * }
+{ * https://zpascal.net                                                        * }
+{ * https://github.com/PassByYou888/zAI                                        * }
 { * https://github.com/PassByYou888/ZServer4D                                  * }
-{ * https://github.com/PassByYou888/zExpression                                * }
-{ * https://github.com/PassByYou888/zTranslate                                 * }
-{ * https://github.com/PassByYou888/zSound                                     * }
-{ * https://github.com/PassByYou888/zAnalysis                                  * }
-{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/PascalString                               * }
 { * https://github.com/PassByYou888/zRasterization                             * }
+{ * https://github.com/PassByYou888/CoreCipher                                 * }
+{ * https://github.com/PassByYou888/zSound                                     * }
+{ * https://github.com/PassByYou888/zChinese                                   * }
+{ * https://github.com/PassByYou888/zExpression                                * }
+{ * https://github.com/PassByYou888/zGameWare                                  * }
+{ * https://github.com/PassByYou888/zAnalysis                                  * }
+{ * https://github.com/PassByYou888/FFMPEG-Header                              * }
+{ * https://github.com/PassByYou888/zTranslate                                 * }
+{ * https://github.com/PassByYou888/InfiniteIoT                                * }
+{ * https://github.com/PassByYou888/FastMD5                                    * }
 { ****************************************************************************** }
 (*
  * copyright (c) 2001 Fabrice Bellard
@@ -34,6 +41,7 @@ unit FFMPEG;
   {$MODE DELPHI }
   {$PACKENUM 4}    (* use 4-byte enums *)
   {$PACKRECORDS C} (* C/C++-compatible record packing *)
+  {$DEFINE API_Dynamic}
 {$ELSE}
   {$MINENUMSIZE 4} (* use 4-byte enums *)
   {$LEGACYIFEND ON}
@@ -66,6 +74,11 @@ uses
   System.IOUtils,
 {$ENDIF FPC}
   Classes;
+
+procedure Load_ffmpeg();
+procedure Free_ffmpeg();
+
+{$Region 'compiler const'}
 
 const
   // libavcodec
@@ -685,6 +698,7 @@ const
     {$DEFINE FF_API_SWS_VECTOR}
   {$IFEND}
 {$ENDIF}
+{$EndRegion 'compiler const'}
 
 const
 {$IF Defined(WIN32) or Defined(WIN64)}
@@ -715,6 +729,7 @@ const
     SWRESAMPLE_LIBNAME = CLibPrefix + 'swresample2' + CLibExtension;
     SWSCALE_LIBNAME    = CLibPrefix + 'swscale4'    + CLibExtension;
   {$ELSE CPUARM}
+    error: no support
   {$ENDIF CPUARM}
 {$ELSEIF Defined(ANDROID)}
     CLibPrefix    = 'lib';
@@ -745,17 +760,10 @@ type
   AnsiChar    = Byte;
   PAnsiChar   = MarshaledAString;
   PPAnsiChar  = ^PAnsiChar;
-  AnsiString  = string;
   PUTF8String = MarshaledString;
 {$IFEND}
 {$ENDIF FPC}
 
-
-{$IFDEF API_Dynamic}
-
-procedure Load_ffmpeg();
-procedure Free_ffmpeg();
-{$ENDIF API_Dynamic}
 
 (* ****************************************************** *)
 (* import libavutil_rational *)
@@ -30448,25 +30456,22 @@ begin
 end;
 
 
-{$IFDEF API_Dynamic}
-
 
 var
-  AVUTIL_LIBNAME_HND,
-    AVCODEC_LIBNAME_HND,
-    AVFORMAT_LIBNAME_HND,
-    AVFILTER_LIBNAME_HND,
-    AVDEVICE_LIBNAME_HND,
-    SWRESAMPLE_LIBNAME_HND,
-    SWSCALE_LIBNAME_HND: HMODULE;
+  AVUTIL_LIBNAME_HND: HMODULE = 0;
+  AVCODEC_LIBNAME_HND: HMODULE = 0;
+  AVFORMAT_LIBNAME_HND: HMODULE = 0;
+  AVFILTER_LIBNAME_HND: HMODULE = 0;
+  AVDEVICE_LIBNAME_HND: HMODULE =  0;
+  SWRESAMPLE_LIBNAME_HND: HMODULE = 0;
+  SWSCALE_LIBNAME_HND: HMODULE = 0;
 
 function GetExtLib(LibName: string): HMODULE;
 begin
-  Result := 0;
 {$IF not(Defined(IOS) and Defined(CPUARM))}
   Result := LoadLibrary(PChar(LibName));
-  if Result = 0 then
-      raise Exception.Create(format('LoadLibrary failed:%s', [LibName]));
+{$ELSE}
+  Result := 0;
 {$IFEND}
 end;
 
@@ -30476,7 +30481,6 @@ begin
   Result := GetProcAddress(AVUTIL_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVUTIL %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30488,7 +30492,6 @@ begin
   Result := GetProcAddress(AVCODEC_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVCODEC %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30500,7 +30503,6 @@ begin
   Result := GetProcAddress(AVFORMAT_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVFORMAT %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30512,7 +30514,6 @@ begin
   Result := GetProcAddress(AVFILTER_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVFORMAT %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30524,7 +30525,6 @@ begin
   Result := GetProcAddress(AVDEVICE_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVFORMAT %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30536,7 +30536,6 @@ begin
   Result := GetProcAddress(SWRESAMPLE_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVFORMAT %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30548,7 +30547,6 @@ begin
   Result := GetProcAddress(SWSCALE_LIBNAME_HND, PChar(ProcName));
   if Result = nil then
       raise Exception.Create(format('external libray error: AVFORMAT %s', [ProcName]));
-
 {$ELSE}
   Result := nil;
 {$IFEND}
@@ -30556,6 +30554,7 @@ end;
 
 procedure Load_ffmpeg();
 begin
+{$IFDEF API_Dynamic}
   AVUTIL_LIBNAME_HND := GetExtLib(AVUTIL_LIBNAME);
   AVCODEC_LIBNAME_HND := GetExtLib(AVCODEC_LIBNAME);
   AVFORMAT_LIBNAME_HND := GetExtLib(AVFORMAT_LIBNAME);
@@ -30563,6 +30562,11 @@ begin
   AVDEVICE_LIBNAME_HND := GetExtLib(AVDEVICE_LIBNAME);
   SWRESAMPLE_LIBNAME_HND := GetExtLib(SWRESAMPLE_LIBNAME);
   SWSCALE_LIBNAME_HND := GetExtLib(SWSCALE_LIBNAME);
+
+  if (AVUTIL_LIBNAME_HND = 0) or (AVCODEC_LIBNAME_HND = 0) or
+    (AVFORMAT_LIBNAME_HND = 0) or (AVFILTER_LIBNAME_HND = 0) or
+    (AVDEVICE_LIBNAME_HND = 0) or (SWRESAMPLE_LIBNAME_HND = 0) or (SWSCALE_LIBNAME_HND = 0) then
+      exit;
 
   av_reduce := GetExtProc_AVUTIL_LIBNAME(_PU + 'av_reduce');
   av_nearer_q := GetExtProc_AVUTIL_LIBNAME(_PU + 'av_nearer_q');
@@ -31389,10 +31393,18 @@ begin
   sws_convertPalette8ToPacked32 := GetExtProc_SWSCALE_LIBNAME(_PU + 'sws_convertPalette8ToPacked32');
   sws_convertPalette8ToPacked24 := GetExtProc_SWSCALE_LIBNAME(_PU + 'sws_convertPalette8ToPacked24');
   sws_get_class := GetExtProc_SWSCALE_LIBNAME(_PU + 'sws_get_class');
+{$ENDIF API_Dynamic}
+  av_register_all();
 end;
 
 procedure Free_ffmpeg();
 begin
+{$IFDEF API_Dynamic}
+  if (AVUTIL_LIBNAME_HND = 0) or (AVCODEC_LIBNAME_HND = 0) or
+    (AVFORMAT_LIBNAME_HND = 0) or (AVFILTER_LIBNAME_HND = 0) or
+    (AVDEVICE_LIBNAME_HND = 0) or (SWRESAMPLE_LIBNAME_HND = 0) or (SWSCALE_LIBNAME_HND = 0) then
+      exit;
+
   av_reduce := nil;
   av_nearer_q := nil;
   av_find_nearest_q_idx := nil;
@@ -32226,14 +32238,16 @@ begin
   FreeLibrary(AVDEVICE_LIBNAME_HND);
   FreeLibrary(SWRESAMPLE_LIBNAME_HND);
   FreeLibrary(SWSCALE_LIBNAME_HND);
-end;
-
 {$ENDIF API_Dynamic}
+end;
 
 
 initialization
 
+ Load_ffmpeg();
 
 finalization
+
+ Free_ffmpeg();
 
 end.
